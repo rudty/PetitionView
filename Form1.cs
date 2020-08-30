@@ -16,6 +16,7 @@ namespace PetitionsList
     public partial class Form1 : Form
     {
         private readonly Dictionary<string, List<PetitionItem>> categories = new Dictionary<string, List<PetitionItem>>();
+        private readonly List<PetitionItem> allPetitionItems = new List<PetitionItem>();
 
         public Form1()
         {
@@ -36,29 +37,38 @@ namespace PetitionsList
             }));
         }
 
+        private void addCategory(PetitionItem item)
+        {
+            bool changed = false;
+            lock (this)
+            {
+                List<PetitionItem> c;
+                if (!categories.ContainsKey(item.category))
+                {
+                    c = new List<PetitionItem>();
+                    categories.Add(item.category, c);
+                    changed = true;
+                } 
+                else
+                {
+                    c = categories[item.category];
+                }
+                c.Add(item);
+                allPetitionItems.Add(item);
+            }
+            if (changed)
+            {
+                updateCategoies();
+            }
+        }
+
         private void Form1_Load(object sender, EventArgs e)
         {
-            categories.Add("전체", new List<PetitionItem>());
+            categories.Add("전체", allPetitionItems);
 
             Request.listAll(e =>
             {
-                bool changed = false;
-                lock (this)
-                {
-                    if (!categories.ContainsKey(e.category))
-                    {
-                        categories.Add(e.category, new List<PetitionItem>());
-                        changed = true;
-                    }
-
-                    var items = categories[e.category];
-                    items.Add(e);
-                    categories["전체"].Add(e);
-                }
-                if (changed)
-                {
-                    updateCategoies();
-                }
+                addCategory(e);
                 listBox1.Invoke(new Action(() => listBox1.Items.Add(e)));
             });
         }
@@ -86,6 +96,28 @@ namespace PetitionsList
             };
             process.Start();
             process.WaitForExit();
+        }
+
+        private void categoryList_Click(object sender, EventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                categoryList.Invoke(new Action(() => categoryList_Click(sender, e)));
+            }
+            else
+            {
+                lock (this)
+                {
+                    listBox1.BeginUpdate();
+                    listBox1.Items.Clear();
+                    string selectCategory = categoryList.SelectedItem as string;
+                    foreach (var item in categories[selectCategory])
+                    {
+                        listBox1.Items.Add(item);
+                    }
+                    listBox1.EndUpdate();
+                }
+            }
         }
     }
 }

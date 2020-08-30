@@ -51,6 +51,7 @@
             this.categoryList.Name = "categoryList";
             this.categoryList.Size = new System.Drawing.Size(120, 469);
             this.categoryList.TabIndex = 1;
+            this.categoryList.Click += new System.EventHandler(this.categoryList_Click);
             // 
             // Form1
             // 
