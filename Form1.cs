@@ -17,7 +17,7 @@ namespace PetitionsList
     {
         private readonly Dictionary<string, List<PetitionItem>> categories = new Dictionary<string, List<PetitionItem>>();
         private readonly List<PetitionItem> allPetitionItems = new List<PetitionItem>();
-
+        private string currentCategory = "전체";
         public Form1()
         {
             InitializeComponent();
@@ -69,7 +69,10 @@ namespace PetitionsList
             Request.listAll(e =>
             {
                 addCategory(e);
-                listBox1.Invoke(new Action(() => listBox1.Items.Add(e)));
+                if (currentCategory == "전체" || e.category == currentCategory)
+                {
+                    listBox1.Invoke(new Action(() => listBox1.Items.Add(e)));
+                }
             });
         }
 
@@ -107,7 +110,7 @@ namespace PetitionsList
             else
             {
                 lock (this)
-                {
+                { 
                     listBox1.BeginUpdate();
                     listBox1.Items.Clear();
                     string selectCategory = categoryList.SelectedItem as string;
@@ -116,6 +119,8 @@ namespace PetitionsList
                         listBox1.Items.Add(item);
                     }
                     listBox1.EndUpdate();
+
+                    currentCategory = selectCategory;
                 }
             }
         }

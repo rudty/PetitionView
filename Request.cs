@@ -16,7 +16,7 @@ namespace PetitionsList
         public string title { get; set; }
         public string category { get; set; }
         public string agreement { get; set; }
-        public override string ToString() => agreement + " \t " + title;
+        public override string ToString() => agreement + "명 \t " + title;
     }
     class PetitionApiResponse
     {
