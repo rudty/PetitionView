@@ -15,7 +15,8 @@ namespace PetitionsList
 
     public partial class Form1 : Form
     {
-        HashSet<string> categories = new HashSet<string>();
+        private readonly Dictionary<string, List<PetitionItem>> categories = new Dictionary<string, List<PetitionItem>>();
+
         public Form1()
         {
             InitializeComponent();
@@ -29,7 +30,7 @@ namespace PetitionsList
                 categoryList.Items.Clear();
                 foreach (var category in categories)
                 {
-                    categoryList.Items.Add(category);
+                    categoryList.Items.Add(category.Key);
                 }
                 categoryList.EndUpdate();
             }));
@@ -37,12 +38,22 @@ namespace PetitionsList
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            categories.Add("전체", new List<PetitionItem>());
+
             Request.listAll(e =>
             {
-                bool changed;
+                bool changed = false;
                 lock (this)
                 {
-                    changed = categories.Add(e.category);
+                    if (!categories.ContainsKey(e.category))
+                    {
+                        categories.Add(e.category, new List<PetitionItem>());
+                        changed = true;
+                    }
+
+                    var items = categories[e.category];
+                    items.Add(e);
+                    categories["전체"].Add(e);
                 }
                 if (changed)
                 {
