@@ -16,55 +16,43 @@ namespace PetitionsList
     public partial class Form1 : Form
     {
         private readonly Dictionary<string, List<PetitionItem>> categories = new Dictionary<string, List<PetitionItem>>();
-        private readonly List<PetitionItem> allPetitionItems = new List<PetitionItem>();
+        private readonly List<PetitionItem> allCategoryItems = new List<PetitionItem>();
         private string currentCategory = "전체";
+
         public Form1()
         {
             InitializeComponent();
         }
 
-        private void updateCategoies()
+        private void addCategoryListView(string category)
         {
-            categoryList.Invoke(new Action(() =>
-            {
-                categoryList.BeginUpdate();
-                categoryList.Items.Clear();
-                foreach (var category in categories)
-                {
-                    categoryList.Items.Add(category.Key);
-                }
-                categoryList.EndUpdate();
-            }));
+            categoryList.Invoke(new Action(() => categoryList.Items.Add(category)));
         }
 
         private void addCategory(PetitionItem item)
         {
-            bool changed = false;
+            List<PetitionItem> c;
             lock (this)
             {
-                List<PetitionItem> c;
                 if (!categories.ContainsKey(item.category))
                 {
                     c = new List<PetitionItem>();
                     categories.Add(item.category, c);
-                    changed = true;
-                } 
+                    addCategoryListView(item.category);
+                }
                 else
                 {
                     c = categories[item.category];
                 }
                 c.Add(item);
-                allPetitionItems.Add(item);
-            }
-            if (changed)
-            {
-                updateCategoies();
+                allCategoryItems.Add(item);
             }
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            categories.Add("전체", allPetitionItems);
+            addCategoryListView("전체");
+            categories.Add("전체", allCategoryItems);
 
             Request.listAll(e =>
             {
@@ -110,10 +98,14 @@ namespace PetitionsList
             else
             {
                 lock (this)
-                { 
+                {
+                    string selectCategory = (string)categoryList.SelectedItem;
+                    if (selectCategory == null)
+                    {
+                        return;
+                    }
                     listBox1.BeginUpdate();
                     listBox1.Items.Clear();
-                    string selectCategory = categoryList.SelectedItem as string;
                     foreach (var item in categories[selectCategory])
                     {
                         listBox1.Items.Add(item);
