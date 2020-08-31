@@ -26,7 +26,7 @@ namespace PetitionsList
 
         public static void AddAll<T>(this ICollection<T> c, ICollection<T> elements)
         {
-            foreach(var e in elements)
+            foreach (var e in elements)
             {
                 c.Add(e);
             }
