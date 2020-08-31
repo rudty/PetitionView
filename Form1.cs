@@ -15,34 +15,57 @@ namespace PetitionsList
 
     public partial class Form1 : Form
     {
-        private readonly Dictionary<string, List<PetitionItem>> categories = new Dictionary<string, List<PetitionItem>>();
+
+        private readonly Dictionary<string, List<PetitionItem>> categoryItems = new Dictionary<string, List<PetitionItem>>();
         private readonly List<PetitionItem> allCategoryItems = new List<PetitionItem>();
         private string currentCategory = "전체";
 
         public Form1()
         {
             InitializeComponent();
+            categoryItems.Add("전체", allCategoryItems);
         }
 
         private void addCategoryListView(string category)
         {
-            categoryList.Invoke(new Action(() => categoryList.Items.Add(category)));
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => addCategoryListView(category)));
+                return;
+            }
+
+            categoryList.Items.Add(category);
         }
 
-        private void addCategory(PetitionItem item)
+        private void addItemListView(PetitionItem item)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => addItemListView(item)));
+                return;
+            }
+
+
+            if (currentCategory == "전체" || item.category == currentCategory)
+            {
+                listBox1.Items.Add(item);
+            }
+        }
+
+        private void addCategoryItem(PetitionItem item)
         {
             List<PetitionItem> c;
             lock (this)
             {
-                if (!categories.ContainsKey(item.category))
+                if (!categoryItems.ContainsKey(item.category))
                 {
                     c = new List<PetitionItem>();
-                    categories.Add(item.category, c);
+                    categoryItems.Add(item.category, c);
                     addCategoryListView(item.category);
                 }
                 else
                 {
-                    c = categories[item.category];
+                    c = categoryItems[item.category];
                 }
                 c.Add(item);
                 allCategoryItems.Add(item);
@@ -52,15 +75,11 @@ namespace PetitionsList
         private void Form1_Load(object sender, EventArgs e)
         {
             addCategoryListView("전체");
-            categories.Add("전체", allCategoryItems);
 
-            Request.listAll(e =>
+            Request.listAll(item =>
             {
-                addCategory(e);
-                if (currentCategory == "전체" || e.category == currentCategory)
-                {
-                    listBox1.Invoke(new Action(() => listBox1.Items.Add(e)));
-                }
+                addCategoryItem(item);
+                addItemListView(item);
             });
         }
 
@@ -93,27 +112,20 @@ namespace PetitionsList
         {
             if (InvokeRequired)
             {
-                categoryList.Invoke(new Action(() => categoryList_Click(sender, e)));
+                Invoke(new Action(() => categoryList_Click(sender, e)));
+                return;
             }
-            else
-            {
-                lock (this)
-                {
-                    string selectCategory = (string)categoryList.SelectedItem;
-                    if (selectCategory == null)
-                    {
-                        return;
-                    }
-                    listBox1.BeginUpdate();
-                    listBox1.Items.Clear();
-                    foreach (var item in categories[selectCategory])
-                    {
-                        listBox1.Items.Add(item);
-                    }
-                    listBox1.EndUpdate();
 
-                    currentCategory = selectCategory;
-                }
+            lock (this)
+            {
+                string selectCategory = (string)categoryList.SelectedItem ?? "전체";
+    
+                listBox1.BeginUpdate();
+                listBox1.Items.Clear();
+                listBox1.Items.AddAll(categoryItems[selectCategory]);
+                listBox1.EndUpdate();
+
+                currentCategory = selectCategory;
             }
         }
     }
